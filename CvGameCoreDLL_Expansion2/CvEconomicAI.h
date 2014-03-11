@@ -230,6 +230,7 @@ private:
 	void DoAntiquitySites();
 	void DisbandExtraWorkers();
 	void DisbandExtraArchaeologists();
+	void DisbandLongObsoleteUnits();
 
 	// Low-level utility functions
 	void AssignExplorersToHuts();

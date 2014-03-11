@@ -283,6 +283,7 @@ private:
 	void ExecuteSSPartAdds();
 	void ExecuteSSPartMoves();
 	void ExecuteTreasureMoves();
+	void ExecuteAircraftInterceptions();
 	void ExecuteAircraftMoves();
 	void ExecuteTradeUnitMoves();
 	void ExecuteArchaeologistMoves();

@@ -5149,6 +5149,34 @@ int CvPlayer::countCitiesFeatureSurrounded() const
 	return iCount;
 }
 
+/// AMS: Count cities with coastal as half value (beyond first)
+int CvPlayer::countCitiesCoastalLessValue() const
+{
+	const CvCity* pLoopCity;
+	int iCountLandCities = 0;
+	int iCountCoastalCities = 0;
+	int iCount = 0;
+	int iLoop;
+
+	iCount = 0;
+
+	for(pLoopCity = firstCity(&iLoop); pLoopCity != NULL; pLoopCity = nextCity(&iLoop))
+	{
+		
+		if(pLoopCity->isCoastal())
+		{
+			iCountCoastalCities ++;
+		}
+		else
+		{
+			iCountLandCities++;
+		}
+	}
+	iCount = iCountLandCities + ((iCountCoastalCities + 1) / 2);
+
+	return iCount;
+}
+
 //	--------------------------------------------------------------------------------
 bool CvPlayer::IsCityConnectedToCity(CvCity* pCity1, CvCity* pCity2, RouteTypes eRestrictRoute, bool bIgnoreHarbors)
 {

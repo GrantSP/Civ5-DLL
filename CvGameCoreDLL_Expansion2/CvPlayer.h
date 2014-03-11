@@ -202,6 +202,7 @@ public:
 	//int countNumCitiesConnectedToCapital() const;
 
 	int countCitiesFeatureSurrounded() const;
+	int countCitiesCoastalLessValue() const;
 
 	bool IsCityConnectedToCity(CvCity* pCity1, CvCity* pCity2, RouteTypes eRestrictRouteType = NO_ROUTE, bool bIgnoreHarbors = false);
 	bool IsCapitalConnectedToPlayer(PlayerTypes ePlayer, RouteTypes eRestrictRouteType = NO_ROUTE);

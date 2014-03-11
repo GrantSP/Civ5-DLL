@@ -535,6 +535,7 @@ void CvEconomicAI::SetTurnStrategyAdopted(EconomicAIStrategyTypes eStrategy, int
 // Do Turn & Strategy Trigger Functions beneath this line
 
 /// Called every turn to see what Strategies this player should using (or not)
+/// AMS: Added DisbandLongObsoleteUnits
 void CvEconomicAI::DoTurn()
 {
 	AI_PERF_FORMAT("AI-perf.csv", ("CvEconomicAI::DoTurn, Turn %03d, %s", GC.getGame().getElapsedGameTurns(), GetPlayer()->getCivilizationShortDescription()) );
@@ -821,6 +822,7 @@ void CvEconomicAI::DoTurn()
 		DoPlotPurchases();
 		DisbandExtraWorkers();
 		DisbandExtraArchaeologists();
+		DisbandLongObsoleteUnits();
 		m_pPlayer->GetCulture()->DoSwapGreatWorks();
 	}
 }
@@ -1708,6 +1710,7 @@ void CvEconomicAI::LogCityMonitor()
 // PRIVATE METHODS
 
 /// See if we want to finish any of our builds by rushing
+/// AMS: Reactivated functionallity and totally reworked.
 void CvEconomicAI::DoHurry()
 {
 	int iLoop = 0;
@@ -1715,15 +1718,16 @@ void CvEconomicAI::DoHurry()
 
 	CvCity* pLoopCity = 0;
 	int iTurnsSaved = 0;
-	int iHurryAmount = 0;
-	int iHurryAmountAvailable = 0;
-	int iI = 0;
-
 	CvCity* pBestHurryCity = NULL;
 	int iBestHurryTurnsSaved = 0;
-	int iBestHurryAmount = 0;
-	int iBestHurryAmountAvailable = 0;
-	HurryTypes eBestHurryType = NO_HURRY;
+	//Exit if we don't have a set amount of gold, to avoid purchase overuse.
+	int comfortableGoldToHurry = 50 + (150 * m_pPlayer->GetCurrentEra());
+	int playerGold = m_pPlayer->GetTreasury()->GetGold();
+
+	if (playerGold < comfortableGoldToHurry)
+	{
+		return;
+	}
 
 	// Look at each of our cities
 	for(pLoopCity = m_pPlayer->firstCity(&iLoop); pLoopCity != NULL; pLoopCity = m_pPlayer->nextCity(&iLoop))
@@ -1731,46 +1735,37 @@ void CvEconomicAI::DoHurry()
 		// What are we currently working on?
 		pOrder = pLoopCity->getOrderFromQueue(0);
 
-		// Did we want to rush it?
-		if(pOrder != NULL && pOrder->bRush)
+		if(pOrder != NULL)
 		{
-			for(iI = 0; iI < GC.getNumHurryInfos(); iI++)
+			bool isPurchasable = pLoopCity->IsCanGoldPurchase(pOrder);
+			int prodPercentRemaining = ((pLoopCity->getProductionNeeded() - pLoopCity->getProduction()) * 100) / pLoopCity->getProductionNeeded();
+
+			//We skip if the build order is more than 60% done.
+			if (prodPercentRemaining < 60)
 			{
-				iHurryAmount = 0;
+				continue;
+			}
 
-				if(pLoopCity->canHurry((HurryTypes)iI) &&
-				        pLoopCity->hurryProduction((HurryTypes)iI) > 0)
+			if (isPurchasable)
+			{
+				iTurnsSaved = pLoopCity->getProductionTurnsLeft() - 1;
+				//Also skip if we don't save any turns
+				if (iTurnsSaved < 2)
 				{
-					iTurnsSaved = pLoopCity->getProductionTurnsLeft() - 1;
-					if(iTurnsSaved > 0)
+					continue;
+				}
+				if (iBestHurryTurnsSaved < iTurnsSaved)
+				{
+					if(GC.getLogging() && GC.getAILogging() && isPurchasable)
 					{
-						if(GC.getHurryInfo((HurryTypes)iI)->getGoldPerProduction() > 0)
-						{
-							// Don't gold rush at all anymore (save gold to buy tiles)
-
-							// iHurryAmount = pLoopCity->hurryGold((HurryTypes)iI);
-							// iHurryAmountAvailable = m_pPlayer->getGold();
-						}
-						else if(GC.getHurryInfo((HurryTypes)iI)->getProductionPerPopulation() > 0)
-						{
-							// Only pop rush if over our current Happiness limit
-							if(m_pPlayer->IsEmpireUnhappy())
-							{
-								iHurryAmount = pLoopCity->hurryPopulation((HurryTypes)iI);
-								iHurryAmountAvailable = pLoopCity->getPopulation();
-							}
-						}
-
-						// Current hurry heuristic is to hurry whichever item has the most turns still to complete
-						if(iHurryAmount > 0 && iTurnsSaved >= iBestHurryTurnsSaved)
-						{
-							iBestHurryTurnsSaved = iTurnsSaved;
-							iBestHurryAmount = iHurryAmount;
-							iBestHurryAmountAvailable = iHurryAmountAvailable;
-							pBestHurryCity = pLoopCity;
-							eBestHurryType = (HurryTypes)iI;
-						}
+						static const char* orderTypeStrings[] = { "ORDER_TRAIN", "ORDER_CONSTRUCT", "ORDER_CREATE", "ORDER_PREPARE", "ORDER_MAINTAIN", "NO_ORDER" };
+						int orderIndex = ((pOrder->eOrderType < 0) || (pOrder->eOrderType > 4)) ? 5 : pOrder->eOrderType;
+						CvString strLogString;
+						strLogString.Format("DoHurry Option: order type %s, Turns Saved: %d,remaining percent = %d", orderTypeStrings[orderIndex], iTurnsSaved, prodPercentRemaining);
+						m_pPlayer->GetHomelandAI()->LogHomelandMessage(strLogString);
 					}
+					iBestHurryTurnsSaved = iTurnsSaved;
+					pBestHurryCity = pLoopCity;
 				}
 			}
 		}
@@ -1779,8 +1774,8 @@ void CvEconomicAI::DoHurry()
 	// Now enact the best hurry we've found (only hurry one item per turn for now)
 	if(pBestHurryCity != NULL)
 	{
-		pBestHurryCity->hurry(eBestHurryType);
-		pBestHurryCity->GetCityStrategyAI()->LogHurry(eBestHurryType, iBestHurryAmount, iBestHurryAmountAvailable, iBestHurryTurnsSaved);
+		pBestHurryCity->PurchaseCurrentOrder();
+		pBestHurryCity->AI_chooseProduction(false);
 	}
 }
 
@@ -2111,6 +2106,7 @@ void CvEconomicAI::DoAntiquitySites()
 	m_iVisibleAntiquitySites = iNumSites;
 }
 
+//AMS: Look for disband at 3 gpt per unit too to disband a bit more aggressively.
 void CvEconomicAI::DisbandExtraWorkers()
 {
 	// Are we running at a deficit?
@@ -2120,7 +2116,7 @@ void CvEconomicAI::DisbandExtraWorkers()
 	int iGoldSpentOnUnits = m_pPlayer->GetTreasury()->GetExpensePerTurnUnitMaintenance();
 	int iAverageGoldPerUnit = iGoldSpentOnUnits / (max(1,m_pPlayer->getNumUnits()));
 
-	if(!bInDeficit && iAverageGoldPerUnit <= 4)
+	if(!bInDeficit && iAverageGoldPerUnit <= 3)
 	{
 		return;
 	}
@@ -2254,6 +2250,81 @@ void CvEconomicAI::DisbandExtraArchaeologists(){
 	
 		pUnit->scrap();
 		LogScrapUnit(pUnit, iNumArchaeologists, iNumSites, 0, 0);
+	}
+}
+
+/// AMS: Check for very long obsolete units that didn't get an upgrade (triremes and warriors as usuals)
+void CvEconomicAI::DisbandLongObsoleteUnits()
+{
+	CvUnit* pUnit;
+	int iLoop;
+	int unitEra;
+	int ArmyId;
+	int playerCurrentEra;
+	bool movingArmy;
+	CvTechEntry* pkTechInfo;
+	CvArmyAI* pThisArmy;
+	playerCurrentEra = m_pPlayer->GetCurrentEra();
+	// Treat information era as atomic for this checking.
+	playerCurrentEra = min(6, playerCurrentEra);
+
+	// Loop through our units
+	for(pUnit = m_pPlayer->firstUnit(&iLoop); pUnit != NULL; pUnit = m_pPlayer->nextUnit(&iLoop))
+	{
+		if (pUnit)
+		{
+			movingArmy = false;
+			ArmyId = pUnit->getArmyID();
+
+			if (ArmyId != -1)
+			{
+				pThisArmy = m_pPlayer->getArmyAI(ArmyId);
+
+				if (pThisArmy)
+				{
+					movingArmy = ((pThisArmy->GetArmyAIState() == ARMYAISTATE_MOVING_TO_DESTINATION) || (pThisArmy->GetArmyAIState() == ARMYAISTATE_AT_DESTINATION));
+				}
+			}
+
+			if(!movingArmy)
+			{
+				// The unit must have an upgrade option, if not, then we don't care about this (includes workers, settlers, explorers)
+				UnitTypes eUpgradeUnitType = pUnit->GetUpgradeUnitType();
+
+				if(eUpgradeUnitType != NO_UNIT)
+				{
+					// Check out unit era based on the prerequirement tech, defaults at ancient era.
+					unitEra = 0;
+					UnitTypes currentUnitType = pUnit->getUnitType();
+					TechTypes ePrereqTech = (TechTypes)GC.getUnitInfo(currentUnitType)->GetPrereqAndTech();
+
+					if (ePrereqTech != NO_TECH)
+					{
+						pkTechInfo = GC.getTechInfo(ePrereqTech);
+
+						if (pkTechInfo)
+						{
+							unitEra = pkTechInfo->GetEra();
+						}
+					}
+
+					// Too much era difference for that unit, lets scrap it.
+					if ((playerCurrentEra - unitEra) > 3)
+					{
+						if(GC.getLogging() && GC.getAILogging())
+						{
+							CvString strLogString;
+							strLogString.Format("Disbanding long obsolete unit. %s, X: %d, Y: %d", pUnit->getName().GetCString(), pUnit->getX(), pUnit->getY());
+							m_pPlayer->GetHomelandAI()->LogHomelandMessage(strLogString);
+						}
+
+						pUnit->scrap();
+						// Only one unit scrap per turn.
+						return;
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -4026,10 +4097,11 @@ bool EconomicAIHelpers::IsTestStrategy_NeedArchaeologists(CvPlayer* pPlayer)
 }
 
 /// There are more archaeologists than sites
+/// AMS: Changed ratio from .5 a .25 to avoid too much archaeologists
 bool EconomicAIHelpers::IsTestStrategy_EnoughArchaeologists(CvPlayer* pPlayer)
 {
 	int iNumSites = GC.getGame().GetNumArchaeologySites();
-	double iMaxRatio = .5; //Ratio of archaeologists to sites
+	double iMaxRatio = .25; //Ratio of archaeologists to sites
 	int iNumArchaeologists = pPlayer->GetNumUnitsWithUnitAI(UNITAI_ARCHAEOLOGIST, true);
 	PolicyTypes eExpFinisher = (PolicyTypes) GC.getInfoTypeForString("POLICY_EXPLORATION_FINISHER", true /*bHideAssert*/);
 	

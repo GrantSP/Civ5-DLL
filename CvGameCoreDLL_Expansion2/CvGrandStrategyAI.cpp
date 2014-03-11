@@ -549,7 +549,7 @@ int CvGrandStrategyAI::GetCulturePriority()
 
 	// Before tourism kicks in, add weight based on flavor
 	int iFlavorCulture =  m_pPlayer->GetFlavorManager()->GetPersonalityIndividualFlavor((FlavorTypes)GC.getInfoTypeForString("FLAVOR_CULTURE"));
-	iPriority += (10 - m_pPlayer->GetCurrentEra()) * iFlavorCulture * 200 / 100;
+	iPriority += (9 - m_pPlayer->GetCurrentEra()) * iFlavorCulture * 200 / 100;
 
 	// Loop through Players to see how we are doing on Tourism and Culture
 	PlayerTypes eLoopPlayer;
@@ -725,7 +725,7 @@ int CvGrandStrategyAI::GetSpaceshipPriority()
 	int iFlavorScience =  m_pPlayer->GetFlavorManager()->GetPersonalityIndividualFlavor((FlavorTypes)GC.getInfoTypeForString("FLAVOR_SCIENCE"));
 
 	// the later the game the greater the chance
-	iPriority += m_pPlayer->GetCurrentEra() * iFlavorScience * 150 / 100;
+	iPriority += (4 + m_pPlayer->GetCurrentEra()) * iFlavorScience * 150 / 100;
 
 	// if I already built the Apollo Program I am very likely to follow through
 	ProjectTypes eApolloProgram = (ProjectTypes) GC.getInfoTypeForString("PROJECT_APOLLO_PROGRAM", true);
@@ -733,7 +733,7 @@ int CvGrandStrategyAI::GetSpaceshipPriority()
 	{
 		if(GET_TEAM(m_pPlayer->getTeam()).getProjectCount(eApolloProgram) > 0)
 		{
-			iPriority += /*150*/ GC.getAI_GS_SS_HAS_APOLLO_PROGRAM();
+			iPriority += /*75*/ (GC.getAI_GS_SS_HAS_APOLLO_PROGRAM() / 2);
 		}
 	}
 

@@ -2346,6 +2346,7 @@ int CvDealAI::GetVoteCommitmentValue(bool bFromMe, PlayerTypes eOtherPlayer, int
 }
 
 /// See if adding Vote Commitment to their side of the deal helps even out pDeal
+/// AMS: If the vote commitment is of 0 value, let's not add it.
 void CvDealAI::DoAddVoteCommitmentToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDontChangeTheirExistingItems, int& iTotalValue, int& iValueImOffering, int& iValueTheyreOffering, int iAmountOverWeWillRequest, bool bUseEvenValue)
 {
 	CvAssert(eThem >= 0);
@@ -2374,7 +2375,7 @@ void CvDealAI::DoAddVoteCommitmentToThem(CvDeal* pDeal, PlayerTypes eThem, bool 
 						int iItemValue = GetTradeItemValue(TRADE_ITEM_VOTE_COMMITMENT, /*bFromMe*/ false, eThem, iProposalID, iVoteChoice, iNumVotes, bRepeal, -1, bUseEvenValue);
 
 						// If adding this to the deal doesn't take it over the limit, do it
-						if(iItemValue + iTotalValue <= iAmountOverWeWillRequest)
+						if((iItemValue > 0) && (iItemValue + iTotalValue <= iAmountOverWeWillRequest))
 						{
 							pDeal->AddVoteCommitment(eThem, iProposalID, iVoteChoice, iNumVotes, bRepeal);
 							iTotalValue = GetDealValue(pDeal, iValueImOffering, iValueTheyreOffering, bUseEvenValue);
@@ -2387,6 +2388,7 @@ void CvDealAI::DoAddVoteCommitmentToThem(CvDeal* pDeal, PlayerTypes eThem, bool 
 }
 
 /// See if adding a Vote Commitment to our side of the deal helps even out pDeal
+/// AMS: If the vote commitment is of 0 value, let's not add it.
 void CvDealAI::DoAddVoteCommitmentToUs(CvDeal* pDeal, PlayerTypes eThem, bool bDontChangeMyExistingItems, int& iTotalValue, int& iValueImOffering, int& iValueTheyreOffering, int iAmountUnderWeWillOffer, bool bUseEvenValue)
 {
 	CvAssert(eThem >= 0);
@@ -2415,7 +2417,7 @@ void CvDealAI::DoAddVoteCommitmentToUs(CvDeal* pDeal, PlayerTypes eThem, bool bD
 						int iItemValue = GetTradeItemValue(TRADE_ITEM_VOTE_COMMITMENT, /*bFromMe*/ true, eThem, iProposalID, iVoteChoice, iNumVotes, bRepeal, -1, bUseEvenValue);
 
 						// If adding this to the deal doesn't take it under the min limit, do it
-						if(-iItemValue + iTotalValue >= iAmountUnderWeWillOffer)
+						if((iItemValue > 0) && (-iItemValue + iTotalValue >= iAmountUnderWeWillOffer))
 						{
 							pDeal->AddVoteCommitment(eMyPlayer, iProposalID, iVoteChoice, iNumVotes, bRepeal);
 							iTotalValue = GetDealValue(pDeal, iValueImOffering, iValueTheyreOffering, bUseEvenValue);
@@ -2428,6 +2430,7 @@ void CvDealAI::DoAddVoteCommitmentToUs(CvDeal* pDeal, PlayerTypes eThem, bool bD
 }
 
 /// See if adding a Resource to their side of the deal helps even out pDeal
+/// AMS: If the resource is of 0 value, let's not add it.
 void CvDealAI::DoAddResourceToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDontChangeTheirExistingItems, int& iTotalValue, int& iValueImOffering, int& iValueTheyreOffering, int iAmountOverWeWillRequest, int iDealDuration, bool bUseEvenValue)
 {
 	CvAssert(eThem >= 0);
@@ -2474,7 +2477,7 @@ void CvDealAI::DoAddResourceToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDontC
 					iItemValue = GetTradeItemValue(TRADE_ITEM_RESOURCES, /*bFromMe*/ false, eThem, eResource, iResourceQuantity, -1, /*bFlag1*/false, iDealDuration, bUseEvenValue);
 
 					// If adding this to the deal doesn't take it over the limit, do it
-					if(iItemValue + iTotalValue <= iAmountOverWeWillRequest)
+					if((iItemValue > 0) && (iItemValue + iTotalValue <= iAmountOverWeWillRequest))
 					{
 						// Try to change the current item if it already exists, otherwise add it
 						if(!pDeal->ChangeResourceTrade(eThem, eResource, iResourceQuantity, iDealDuration))
@@ -2510,7 +2513,7 @@ void CvDealAI::DoAddResourceToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDontC
 					iItemValue = GetTradeItemValue(TRADE_ITEM_RESOURCES, /*bFromMe*/ false, eThem, eResource, iResourceQuantity, -1, /*bFlag1*/false, iDealDuration, bUseEvenValue);
 
 					// If adding this to the deal doesn't take it over the limit, do it
-					if(iItemValue + iTotalValue <= iAmountOverWeWillRequest)
+					if((iItemValue > 0) && (iItemValue + iTotalValue <= iAmountOverWeWillRequest))
 					{
 						// Try to change the current item if it already exists, otherwise add it
 						if(!pDeal->ChangeResourceTrade(eThem, eResource, iResourceQuantity, iDealDuration))
@@ -2526,6 +2529,7 @@ void CvDealAI::DoAddResourceToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDontC
 }
 
 /// See if adding a Resource to our side of the deal helps even out pDeal
+/// AMS: If the resource is of 0 value, let's not add it.
 void CvDealAI::DoAddResourceToUs(CvDeal* pDeal, PlayerTypes eThem, bool bDontChangeMyExistingItems, int& iTotalValue, int& iValueImOffering, int& iValueTheyreOffering, int iAmountUnderWeWillOffer, int iDealDuration, bool bUseEvenValue)
 {
 	CvAssert(eThem >= 0);
@@ -2577,7 +2581,7 @@ void CvDealAI::DoAddResourceToUs(CvDeal* pDeal, PlayerTypes eThem, bool bDontCha
 					iItemValue = GetTradeItemValue(TRADE_ITEM_RESOURCES, /*bFromMe*/ true, eThem, eResource, iResourceQuantity, -1, /*bFlag1*/false, iDealDuration, bUseEvenValue);
 
 					// If adding this to the deal doesn't take it under the min limit, do it
-					if(-iItemValue + iTotalValue >= iAmountUnderWeWillOffer)
+					if((iItemValue > 0) && (-iItemValue + iTotalValue >= iAmountUnderWeWillOffer))
 					{
 						// Try to change the current item if it already exists, otherwise add it
 						if(!pDeal->ChangeResourceTrade(eMyPlayer, eResource, iResourceQuantity, iDealDuration))
@@ -2594,6 +2598,7 @@ void CvDealAI::DoAddResourceToUs(CvDeal* pDeal, PlayerTypes eThem, bool bDontCha
 
 
 /// See if adding Embassy to their side of the deal helps even out pDeal
+/// AMS: If the embassy is of 0 value, let's not add it.
 void CvDealAI::DoAddEmbassyToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDontChangeTheirExistingItems, int& iTotalValue, int& iValueImOffering, int& iValueTheyreOffering, int iAmountOverWeWillRequest, bool bUseEvenValue)
 {
 	CvAssert(eThem >= 0);
@@ -2614,7 +2619,7 @@ void CvDealAI::DoAddEmbassyToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDontCh
 					int iItemValue = GetTradeItemValue(TRADE_ITEM_ALLOW_EMBASSY, /*bFromMe*/ false, eThem, -1, -1, -1, /*bFlag1*/false, -1, bUseEvenValue);
 
 					// If adding this to the deal doesn't take it over the limit, do it
-					if(iItemValue + iTotalValue <= iAmountOverWeWillRequest)
+					if((iItemValue > 0) && (iItemValue + iTotalValue <= iAmountOverWeWillRequest))
 					{
 						pDeal->AddAllowEmbassy(eThem);
 						iTotalValue = GetDealValue(pDeal, iValueImOffering, iValueTheyreOffering, bUseEvenValue);
@@ -2626,6 +2631,7 @@ void CvDealAI::DoAddEmbassyToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDontCh
 }
 
 /// See if adding Embassy to our side of the deal helps even out pDeal
+/// AMS: If the embassy is of 0 value, let's not add it.
 void CvDealAI::DoAddEmbassyToUs(CvDeal* pDeal, PlayerTypes eThem, bool bDontChangeMyExistingItems, int& iTotalValue, int& iValueImOffering, int& iValueTheyreOffering, int iAmountUnderWeWillOffer, bool bUseEvenValue)
 {
 	CvAssert(eThem >= 0);
@@ -2646,7 +2652,7 @@ void CvDealAI::DoAddEmbassyToUs(CvDeal* pDeal, PlayerTypes eThem, bool bDontChan
 					int iItemValue = GetTradeItemValue(TRADE_ITEM_ALLOW_EMBASSY, /*bFromMe*/ true, eThem, -1, -1, -1, /*bFlag1*/false, -1, bUseEvenValue);
 
 					// If adding this to the deal doesn't take it under the min limit, do it
-					if(-iItemValue + iTotalValue >= iAmountUnderWeWillOffer)
+					if((iItemValue > 0) && (-iItemValue + iTotalValue >= iAmountUnderWeWillOffer))
 					{
 						pDeal->AddAllowEmbassy(eMyPlayer);
 						iTotalValue = GetDealValue(pDeal, iValueImOffering, iValueTheyreOffering, bUseEvenValue);
@@ -2658,6 +2664,7 @@ void CvDealAI::DoAddEmbassyToUs(CvDeal* pDeal, PlayerTypes eThem, bool bDontChan
 }
 
 /// See if adding Open Borders to their side of the deal helps even out pDeal
+/// AMS: If the Open Borders is of 0 value, let's not add it.
 void CvDealAI::DoAddOpenBordersToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDontChangeTheirExistingItems, int& iTotalValue, int& iValueImOffering, int& iValueTheyreOffering, int iAmountOverWeWillRequest, int iDealDuration, bool bUseEvenValue)
 {
 	CvAssert(eThem >= 0);
@@ -2678,7 +2685,7 @@ void CvDealAI::DoAddOpenBordersToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDo
 					int iItemValue = GetTradeItemValue(TRADE_ITEM_OPEN_BORDERS, /*bFromMe*/ false, eThem, -1, -1, -1, /*bFlag1*/false, iDealDuration, bUseEvenValue);
 
 					// If adding this to the deal doesn't take it over the limit, do it
-					if(iItemValue + iTotalValue <= iAmountOverWeWillRequest)
+					if((iItemValue > 0) && (iItemValue + iTotalValue <= iAmountOverWeWillRequest))
 					{
 						pDeal->AddOpenBorders(eThem, iDealDuration);
 						iTotalValue = GetDealValue(pDeal, iValueImOffering, iValueTheyreOffering, bUseEvenValue);
@@ -2690,6 +2697,7 @@ void CvDealAI::DoAddOpenBordersToThem(CvDeal* pDeal, PlayerTypes eThem, bool bDo
 }
 
 /// See if adding Open Borders to our side of the deal helps even out pDeal
+/// AMS: If the Open Borders is of 0 value, let's not add it.
 void CvDealAI::DoAddOpenBordersToUs(CvDeal* pDeal, PlayerTypes eThem, bool bDontChangeMyExistingItems, int& iTotalValue, int& iValueImOffering, int& iValueTheyreOffering, int iAmountUnderWeWillOffer, int iDealDuration, bool bUseEvenValue)
 {
 	CvAssert(eThem >= 0);
@@ -2710,7 +2718,7 @@ void CvDealAI::DoAddOpenBordersToUs(CvDeal* pDeal, PlayerTypes eThem, bool bDont
 					int iItemValue = GetTradeItemValue(TRADE_ITEM_OPEN_BORDERS, /*bFromMe*/ true, eThem, -1, -1, -1, /*bFlag1*/false, iDealDuration, bUseEvenValue);
 
 					// If adding this to the deal doesn't take it under the min limit, do it
-					if(-iItemValue + iTotalValue >= iAmountUnderWeWillOffer)
+					if((iItemValue > 0) && (-iItemValue + iTotalValue >= iAmountUnderWeWillOffer))
 					{
 						pDeal->AddOpenBorders(eMyPlayer, iDealDuration);
 						iTotalValue = GetDealValue(pDeal, iValueImOffering, iValueTheyreOffering, bUseEvenValue);

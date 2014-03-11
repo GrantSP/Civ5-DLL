@@ -744,7 +744,9 @@ public:
 	bool CreateProject(ProjectTypes eProjectType);
 
 	bool CanPlaceUnitHere(UnitTypes eUnitType);
+	bool IsCanGoldPurchase(OrderData* pOrder);
 	bool IsCanPurchase(bool bTestPurchaseCost, bool bTestTrainable, UnitTypes eUnitType, BuildingTypes eBuildingType, ProjectTypes eProjectType, YieldTypes ePurchaseYield);
+	void PurchaseCurrentOrder();
 	void Purchase(UnitTypes eUnitType, BuildingTypes eBuildingType, ProjectTypes eProjectType, YieldTypes ePurchaseYield);
 
 	PlayerTypes getLiberationPlayer() const;

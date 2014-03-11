@@ -3114,6 +3114,20 @@ bool CvPlayerPolicies::CanUnlockPolicyBranch(PolicyBranchTypes eBranchType)
 	return true;
 }
 
+/// can the player unlock eBranchType right now?
+bool CvPlayerPolicies::IsEraPrereqBranch(PolicyBranchTypes eBranchType)
+{
+	bool methodResult = false;
+	CvPolicyBranchEntry* pkBranchEntry = m_pPolicies->GetPolicyBranchEntry(eBranchType);
+
+	if(pkBranchEntry->GetEraPrereq() > 0)
+	{
+		methodResult = true;
+	}
+
+	return methodResult;
+}
+
 /// Accessor: has a player unlocked eBranchType to pick Policies from?
 bool CvPlayerPolicies::IsPolicyBranchUnlocked(PolicyBranchTypes eBranchType) const
 {
@@ -4023,6 +4037,7 @@ void CvPlayerPolicies::DoChooseIdeology()
 // PRIVATE METHODS
 
 // Internal method to add all of this leaderheads' flavors as strategies for policy AI
+// AMS: Don't factor in Grand strategy before Medieval.
 void CvPlayerPolicies::AddFlavorAsStrategies(int iPropagatePercent)
 {
 	int iFlavorValue;
@@ -4038,7 +4053,15 @@ void CvPlayerPolicies::AddFlavorAsStrategies(int iPropagatePercent)
 
 //		NEW WAY: use PERSONALITY flavors (since policy choices are LONG-TERM)
 //		EVEN NEWER WAY: add in a modifier for the Grand Strategy we are running (since these are also long term)
-		iFlavorValue = m_pPlayer->GetGrandStrategyAI()->GetPersonalityAndGrandStrategy((FlavorTypes) iFlavor);
+		//		AMS: EVEN NEWER!!! not add grand strategy factor before medieval era, the AI still doesn't know if the Grand Strategy is solid.
+		if (m_pPlayer->GetCurrentEra() < 2)
+		{
+			iFlavorValue = m_pPlayer->GetFlavorManager()->GetPersonalityIndividualFlavor((FlavorTypes) iFlavor);
+		}
+		else
+		{
+			iFlavorValue = m_pPlayer->GetGrandStrategyAI()->GetPersonalityAndGrandStrategy((FlavorTypes) iFlavor);
+		}
 
 //		Boost flavor even further based on in-game conditions
 		

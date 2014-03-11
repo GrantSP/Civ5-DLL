@@ -593,6 +593,7 @@ public:
 	// Policy Branch Stuff
 	void DoUnlockPolicyBranch(PolicyBranchTypes eBranchType);
 	bool CanUnlockPolicyBranch(PolicyBranchTypes eBranchType);
+	bool IsEraPrereqBranch(PolicyBranchTypes eBranchType);
 
 	bool IsPolicyBranchUnlocked(PolicyBranchTypes eBranchType) const;
 	void SetPolicyBranchUnlocked(PolicyBranchTypes eBranchType, bool bNewValue, bool bRevolution);

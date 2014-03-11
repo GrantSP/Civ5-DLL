@@ -911,6 +911,7 @@ bool IsSafe(CvPlayerAI* pPlayer)
 	}
 }
 
+//AMS: Wait for some turns if no work slot is available.
 GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveWriter(CvUnit* pGreatWriter)
 {
 	GreatPeopleDirectiveTypes eDirective = NO_GREAT_PEOPLE_DIRECTIVE_TYPE;
@@ -933,9 +934,14 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveWriter(CvUnit* pGreatWriter)
 	{
 		eDirective = GREAT_PEOPLE_DIRECTIVE_USE_POWER;
 	}
-	else
+	else if ((GC.getGame().getGameTurn() - pGreatWriter->getGameTurnCreated()) >= GC.getAI_HOMELAND_GREAT_PERSON_TURNS_TO_WAIT())
 	{
 		eDirective = GREAT_PEOPLE_DIRECTIVE_CULTURE_BLAST;
+	}
+	//AMS: If still no directive, defaults at building great work.
+	if (eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE)
+	{
+		eDirective = GREAT_PEOPLE_DIRECTIVE_USE_POWER;
 	}
 
 	return eDirective;
@@ -970,7 +976,7 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveArtist(CvUnit* pGreatArtist)
 	}
 
 	// If Brazil and we're closing in on Culture Victory
-	if (eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE && GetPlayerTraits()->GetGoldenAgeTourismModifier() > 0 && GetCulture()->GetNumCivsInfluentialOn() > 0)
+	if (eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE && GetPlayerTraits()->GetGoldenAgeTourismModifier() > 0 && GetCulture()->GetNumCivsInfluentialOn() > (GC.getGame().GetGameCulture()->GetNumCivsInfluentialForWin() / 4))
 	{
 		eDirective = GREAT_PEOPLE_DIRECTIVE_GOLDEN_AGE;
 	}
@@ -982,14 +988,20 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveArtist(CvUnit* pGreatArtist)
 		eDirective = GREAT_PEOPLE_DIRECTIVE_USE_POWER;
 	}
 
-	if (eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE && !isGoldenAge())
+	if (eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE && !isGoldenAge() && ((GC.getGame().getGameTurn() - pGreatArtist->getGameTurnCreated()) >= GC.getAI_HOMELAND_GREAT_PERSON_TURNS_TO_WAIT()))
 	{
 		eDirective = GREAT_PEOPLE_DIRECTIVE_GOLDEN_AGE;
+	}
+	//AMS: If still no directive, defaults at building great work.
+	if (eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE)
+	{
+		eDirective = GREAT_PEOPLE_DIRECTIVE_USE_POWER;
 	}
 
 	return eDirective;
 }
 
+//AMS: Instead of culture blast when created if no great work slot, we wait some turns until use...
 GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveMusician(CvUnit* pGreatMusician)
 {
 	GreatPeopleDirectiveTypes eDirective = NO_GREAT_PEOPLE_DIRECTIVE_TYPE;
@@ -1016,13 +1028,18 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveMusician(CvUnit* pGreatMusicia
 	{
 		eDirective = GREAT_PEOPLE_DIRECTIVE_USE_POWER;
 	}
-	else
+	else if ((GC.getGame().getGameTurn() - pGreatMusician->getGameTurnCreated()) >= GC.getAI_HOMELAND_GREAT_PERSON_TURNS_TO_WAIT())
 	{
 		CvPlot* pTarget = FindBestMusicianTargetPlot(pGreatMusician, true);
 		if(pTarget)
 		{
 			eDirective = GREAT_PEOPLE_DIRECTIVE_TOURISM_BLAST;
 		}
+	}
+	//AMS: If still no directive, defaults at building great work.
+	if (eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE)
+	{
+		eDirective = GREAT_PEOPLE_DIRECTIVE_USE_POWER;
 	}
 
 	return eDirective;
@@ -1059,6 +1076,7 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveEngineer(CvUnit* pGreatEnginee
 	return eDirective;
 }
 
+// If AI get merchants very early, better to go for customs house.
 GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveMerchant(CvUnit* pGreatMerchant)
 {
 	GreatPeopleDirectiveTypes eDirective = NO_GREAT_PEOPLE_DIRECTIVE_TYPE;
@@ -1082,6 +1100,13 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveMerchant(CvUnit* pGreatMerchan
 			eDirective = GREAT_PEOPLE_DIRECTIVE_CONSTRUCT_IMPROVEMENT;
 		}
 	}
+	if (eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE && GC.getGame().getGameTurn() <= ((GC.getGame().getEstimateEndTurn() * 1) / 4))
+	{
+		if (!bTheVeniceException)
+		{
+			eDirective = GREAT_PEOPLE_DIRECTIVE_CONSTRUCT_IMPROVEMENT;
+		}	
+	}
 
 	// Attempt a run to a minor civ
 	if(eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE && IsSafe(this))
@@ -1101,6 +1126,7 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveMerchant(CvUnit* pGreatMerchan
 	return eDirective;
 }
 
+// AMS: AI will build academy more consistently.
 GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveScientist(CvUnit* /*pGreatScientist*/)
 {
 	GreatPeopleDirectiveTypes eDirective = NO_GREAT_PEOPLE_DIRECTIVE_TYPE;
@@ -1111,11 +1137,19 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveScientist(CvUnit* /*pGreatScie
 		eDirective = GREAT_PEOPLE_DIRECTIVE_USE_POWER;
 	}
 
-	if(eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE && GC.getGame().getGameTurn() <= ((GC.getGame().getEstimateEndTurn() * 1) / 4))
+	if(eDirective == NO_GREAT_PEOPLE_DIRECTIVE_TYPE && GC.getGame().getGameTurn() <= ((GC.getGame().getEstimateEndTurn() * 1) / 3))
 	{
 		if(GetDiplomacyAI()->IsGoingForSpaceshipVictory())
 		{
 			eDirective = GREAT_PEOPLE_DIRECTIVE_CONSTRUCT_IMPROVEMENT;
+		}
+		else
+		{
+			//AMS: Even if not going spaceship right now, build academy 66% of times.
+			if ((GC.getGame().getGameTurn()) % 3 != 0)
+			{
+				eDirective = GREAT_PEOPLE_DIRECTIVE_CONSTRUCT_IMPROVEMENT;
+			}
 		}
 	}
 
@@ -1159,6 +1193,7 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveGeneral(CvUnit* pGreatGeneral)
 	return eDirective;
 }
 
+//AMS: sometimes the AI will build holy sites if got the prophet very early.
 GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveProphet(CvUnit*)
 {
 	GreatPeopleDirectiveTypes eDirective = NO_GREAT_PEOPLE_DIRECTIVE_TYPE;
@@ -1169,8 +1204,15 @@ GreatPeopleDirectiveTypes CvPlayerAI::GetDirectiveProphet(CvUnit*)
 	// CASE 1: I have an enhanced religion
 	if (pMyReligion && pMyReligion->m_bEnhanced)
 	{
-		// Spread religion if there is any city that needs it
-		if (GetReligionAI()->ChooseProphetConversionCity(false/*bOnlyBetterThanEnhancingReligion*/))
+		// If gets a phophet very early in the game progress, holy site is a great option.
+		if(GC.getGame().getGameTurn() <= ((GC.getGame().getEstimateEndTurn() * 1) / 5))
+		{
+			if ((GC.getGame().getGameTurn()) % 3 != 0)
+			{
+				eDirective = GREAT_PEOPLE_DIRECTIVE_CONSTRUCT_IMPROVEMENT;
+			}
+		}
+		else if (GetReligionAI()->ChooseProphetConversionCity(false/*bOnlyBetterThanEnhancingReligion*/))
 		{
 			eDirective = GREAT_PEOPLE_DIRECTIVE_SPREAD_RELIGION;
 		}

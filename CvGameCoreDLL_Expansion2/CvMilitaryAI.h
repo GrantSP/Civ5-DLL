@@ -256,6 +256,7 @@ public:
 	};
 	UnitTypes GetUnitForArmy(CvCity* pCity) const;
 	bool WillAirUnitRebase(CvUnit* pUnit) const;
+	int GetMaxPossibleInterceptions(CvPlot* pCenterPlot) const;
 	int GetNumEnemyAirUnitsInRange(CvPlot* pCenterPlot, int iRange, bool bCountFighters, bool bCountBombers) const;
 	CvPlot *GetBestAirSweepTarget(CvUnit* pFighter) const;
 

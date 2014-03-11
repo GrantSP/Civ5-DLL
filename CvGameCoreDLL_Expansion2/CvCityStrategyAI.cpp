@@ -2099,7 +2099,7 @@ bool CityStrategyAIHelpers::IsTestCityStrategy_NeedTileImprovers(AICityStrategyT
 	}
 	else
 	{
-		int iNumCities = max(1, (iCurrentNumCities * 3) / 4);
+		int iNumCities = max(1, iCurrentNumCities);
 		if(iNumWorkers >= iNumCities)
 			return false;
 		// If we're losing at war, return false
@@ -2137,6 +2137,11 @@ bool CityStrategyAIHelpers::IsTestCityStrategy_NeedTileImprovers(AICityStrategyT
 
 		if(GC.getGame().getElapsedGameTurns() > iDesperateTurn)
 			return true;
+	}
+	int iCityCountCoastalLessValue = kPlayer.countCitiesCoastalLessValue();
+	if (iNumWorkers < iCityCountCoastalLessValue)
+	{
+		return true;
 	}
 
 	return false;

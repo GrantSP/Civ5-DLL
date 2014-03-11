@@ -141,6 +141,7 @@ void CvPolicyAI::AddFlavorWeights(FlavorTypes eFlavor, int iWeight, int iPropaga
 }
 
 /// Choose a player's next policy purchase (could be opening a branch)
+/// AMS: No pre-requirement policies are rated a bit less.
 int CvPolicyAI::ChooseNextPolicy(CvPlayer* pPlayer)
 {
 	RandomNumberDelegate fcn;
@@ -231,6 +232,12 @@ int CvPolicyAI::ChooseNextPolicy(CvPlayer* pPlayer)
 
 						iBranchWeight *= (100 - m_iPolicyWeightPercentDropNewBranch);
 						iBranchWeight /= 100;
+						//AMS: Rate a bit lower all starting branches as they have policies only useful at the beginning.
+						if (!pPlayer->GetPlayerPolicies()->IsEraPrereqBranch(ePolicyBranch))
+						{
+							iBranchWeight *= 80;
+							iBranchWeight /= 100;
+						}
 						if(eCurrentGrandStrategy == eCultureGrandStrategy)
 						{
 							iBranchWeight /= 3;

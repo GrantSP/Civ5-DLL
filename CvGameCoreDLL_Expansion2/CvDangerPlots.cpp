@@ -590,9 +590,11 @@ bool CvDangerPlots::ShouldIgnoreCitadel(CvPlot* pCitadelPlot, bool bIgnoreVisibi
 
 //	-----------------------------------------------------------------------------------------------
 /// Contains the calculations to do the danger value for the plot according to the unit
+/// AMS: Modified to take ranged units into acount properly.
 void CvDangerPlots::AssignUnitDangerValue(CvUnit* pUnit, CvPlot* pPlot)
 {
 	// MAJIK NUMBARS TO MOVE TO XML
+	int iTurnsAway = 0;
 	int iCombatValueCalc = 100;
 	int iBaseUnitCombatValue = pUnit->GetBaseCombatStrengthConsideringDamage() * iCombatValueCalc;
 	// Combat capable?  If not, the calculations will always result in 0, so just skip it.
@@ -610,15 +612,34 @@ void CvDangerPlots::AssignUnitDangerValue(CvUnit* pUnit, CvPlot* pPlot)
 
 			int iPlotX = pPlot->getX();
 			int iPlotY = pPlot->getY();
-			// can the unit actually walk there
-			if(!kPathFinder.GeneratePath(pUnit->getX(), pUnit->getY(), iPlotX, iPlotY, 0, true /*bReuse*/))
+
+			//AMS: Ranged unit in range?
+			if (pUnit->isRanged())
 			{
-				return;
+				int pDistance = plotDistance(pUnit->getX(), pUnit->getY(), iPlotX, iPlotY);
+				// Plot is in range
+				if( pDistance <= pUnit->GetRange())
+				{
+					iTurnsAway = 1;
+				}
+				else if(pDistance < pUnit->GetRangePlusMoveToshot())
+				{
+					iTurnsAway = 2;
+				}
 			}
 
-			CvAStarNode* pNode = kPathFinder.GetLastNode();
-			int iTurnsAway = pNode->m_iData2;
-			iTurnsAway = max(iTurnsAway, 1);
+			if (iTurnsAway == 0)
+			{
+				// can the unit actually walk there
+				if(!kPathFinder.GeneratePath(pUnit->getX(), pUnit->getY(), iPlotX, iPlotY, 0, true /*bReuse*/))
+				{
+					return;
+				}
+
+				CvAStarNode* pNode = kPathFinder.GetLastNode();
+				iTurnsAway = (pNode->m_iData2);
+				iTurnsAway = max(iTurnsAway, 1);
+			}
 
 			int iUnitCombatValue = iBaseUnitCombatValue / iTurnsAway;
 			iUnitCombatValue = ModifyDangerByRelationship(pUnit->getOwner(), pPlot, iUnitCombatValue);

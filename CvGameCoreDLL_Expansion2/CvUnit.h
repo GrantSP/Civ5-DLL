@@ -414,6 +414,7 @@ public:
 	bool hasMoved() const;
 
 	int GetRange() const;
+	int GetRangePlusMoveToshot() const;
 	int GetNukeDamageLevel() const;
 
 	bool canBuildRoute() const;
@@ -1077,8 +1078,12 @@ public:
 	bool isPotentialEnemy(TeamTypes eTeam, const CvPlot* pPlot = NULL) const;
 
 	bool canRangeStrike() const;
+	bool canEverRangeStrikeAtFromPlot(int iX, int iY, CvPlot* targetPlot) const;
 	bool canEverRangeStrikeAt(int iX, int iY) const;
 	bool canRangeStrikeAt(int iX, int iY, bool bNeedWar = true, bool bNoncombatAllowed = true) const;
+	bool canMoveAndRangedStrike(int iX, int iY);
+
+	void GetMovablePlotListOpt(vector<CvPlot*>& plotData, CvPlot* plotTarget, bool exitOnFound);
 
 	bool IsAirSweepCapable() const;
 	int GetAirSweepCapableCount() const;
@@ -1118,6 +1123,7 @@ public:
 	void AI_promote();
 	UnitAITypes AI_getUnitAIType() const;
 	void AI_setUnitAIType(UnitAITypes eNewValue);
+	int GetPromotionValue(int promotionBonus, int unitExtraValue, int matchFlavorValue, int baseValue);
 	int AI_promotionValue(PromotionTypes ePromotion);
 
 	GreatPeopleDirectiveTypes GetGreatPeopleDirective() const;
